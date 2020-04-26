@@ -6,7 +6,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from math import sqrt
 
-print('started')
 
 class XGB_tune():
     
@@ -69,6 +68,34 @@ class XGB_tune():
         self.rand_perf_df = self.rand_perf_df.sort_values(by='test_rmse')
         
         return self.rand_perf_df
+
+#grid search
+    def grid_search(self,max_iters):
+        
+        #Create a grid search that automatically creates the search ranges based on
+        #users input of maximum iterations
+        
+        return self.grid_perf_df
+        
+        
+
+# Various heuristic algorithms to search for optimal parameters
+    def sa_search(self,sched):
+        
+        return self.sa_perf_df
+    
+    def hill_climb_search(self,select_type,restarts,max_calcs):
+        
+        return self.hill_climb_perf_df
+    
+    def ga_search(self):
+        
+        return self.ga_perf_df
+    
+    def pso_search(self):
+        
+        return self.pso_perf_df
+        
     
     
     
@@ -79,6 +106,5 @@ test_tune = XGB_tune(test_df,'recordCount',[10,1000],[0.1,0.001],[2,6],.3)
 
 test_df = test_tune.random_search(2)
 
-#append not working.  self.rand_perf_df is empty dataframe with now columns or rows.
 
 print(test_df)
