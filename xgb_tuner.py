@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from math import sqrt
 
+print('started')
 
 class XGB_tune():
     
@@ -33,16 +34,16 @@ class XGB_tune():
         
         
         
-    def random_search(n_iters):
+    def random_search(self,n_iters):
         
         self.rand_perf_df = pd.DataFrame()
         
         for i in range(0,n_iters):
         
             #create random starting space
-            rand_trees = np.random.randint(low=tree_range[0],high=tree_range[1])
-            rand_lr = np.random.uniform(low=lr_range[0],high=lr_range[1])
-            rand_depth = np.random.randint(low=depth_range[0],high=depth_range[1])
+            rand_trees = np.random.randint(low=self.tree_range[0],high=self.tree_range[1])
+            rand_lr = np.random.uniform(low=self.lr_range[0],high=self.lr_range[1])
+            rand_depth = np.random.randint(low=self.depth_range[0],high=self.depth_range[1])
         
             #instantiate XGBoost and train model
             temp_model = XGBRegressor(n_estimators= rand_trees,learning_rate=rand_lr,max_depth=rand_depth)
@@ -58,11 +59,26 @@ class XGB_tune():
             test_rmse = sqrt(mean_squared_error(self.y_test, test_pred)) 
             
             #put into rand_perf_df dataframe
-            self.rand_perf_df.append({'n_estimators':rand_trees},{'learning_rate':rand_lr},{'max_depth':rand_depth},{'train_rmse':train_rmse},{'test_rmse':test_rmse})
-        
-        self.rand_per_df = self.rand_per_df.sort_values(by='test_rmse')
-        return self.rand_per_df
-        
+            self.rand_perf_df = self.rand_perf_df.append({'n_estimators':rand_trees,
+                                                          'learning_rate':rand_lr,'max_depth':rand_depth,
+                                                          'train_rmse':train_rmse,
+                                                          'test_rmse':test_rmse},ignore_index=True)
+            
 
-test_df = pd.read_csv('sample_data/test_data.csv')     
         
+        self.rand_perf_df = self.rand_perf_df.sort_values(by='test_rmse')
+        
+        return self.rand_perf_df
+    
+    
+    
+test_df = pd.read_csv('sample_data/test_data.csv')   
+
+
+test_tune = XGB_tune(test_df,'recordCount',[10,1000],[0.1,0.001],[2,6],.3)
+
+test_df = test_tune.random_search(2)
+
+#append not working.  self.rand_perf_df is empty dataframe with now columns or rows.
+
+print(test_df)
