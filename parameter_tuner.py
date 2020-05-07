@@ -74,29 +74,28 @@ class paramTune():
     #3. Create or append to performance DF
     def random_search(self,n_iters,algo_name,perf_dict_name,perf_Func=rmse,**kwargs,):
         
-        
+
         for h in range(0,n_iters):
             
         
             #I need to make a provision to make sure that duplicate searches are not done
             
             #loop through all tuning parameters provided and assign a random value to each
+            temp_kwargs = {}
             for i in kwargs:
-                
-                temp_kwargs = {}
-                
+
                 temp_lower = kwargs[i][0]
                 temp_upper = kwargs[i][1]
                 
                 if kwargs[i][2] == 'int':
                     temp_rand = np.random.randint(low=temp_lower,high=temp_upper)
-                
+
                 else:
                     temp_rand = np.random.uniform(low=temp_lower,high=temp_upper)
-                
-                
+
                 
                 temp_kwargs[i] = temp_rand
+                
                 
             #train and score model
             train_pred, test_pred = self.trainAndScore(algo_name,**temp_kwargs)
@@ -109,9 +108,11 @@ class paramTune():
             temp_kwargs['train_perf'] = train_rmse
             temp_kwargs['test_perf'] = test_rmse
             
+            
             #put results and parameters into dataframe
             temp_df = pd.DataFrame.from_records(temp_kwargs,index=[0])
             
+
             
             #append to temp_df_all if it exists, if it doesn't, create it    
             try:
@@ -126,12 +127,13 @@ class paramTune():
         return
     
     
+#test the code
 test_df = pd.read_csv('sample_data/test_data.csv')   
 
 test_tune = paramTune(test_df, 'recordCount', 0.3)
 
-test_tune.random_search(5,XGBRegressor,'first_test',n_estimators=[10,20,'int'])
-test_tune.random_search(5,XGBRegressor,'first_test',n_estimators=[10,20,'int'])
+test_tune.random_search(2,XGBRegressor,'first_test',n_estimators=[10,20,'int'],learning_rate=[0.25,0.1,'cont'])
+#test_tune.random_search(5,XGBRegressor,'first_test',n_estimators=[10,20,'int'],learning_rate=[0.25,0.1,'cont'])
 
 print(test_tune.first_test)
 
