@@ -5,6 +5,9 @@ from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from math import sqrt
+import math
+import itertools
+import copy
 
 
 class paramTune():
@@ -82,6 +85,7 @@ class paramTune():
             
             #loop through all tuning parameters provided and assign a random value to each
             temp_kwargs = {}
+            
             for i in kwargs:
 
                 temp_lower = kwargs[i][0]
@@ -92,6 +96,9 @@ class paramTune():
 
                 else:
                     temp_rand = np.random.uniform(low=temp_lower,high=temp_upper)
+                    
+                #I need to add a test here that if the combinations of the tuning parameters has been
+                # done already, recalculate random numbers and add one iteration back (if possible)
 
                 
                 temp_kwargs[i] = temp_rand
@@ -127,17 +134,116 @@ class paramTune():
         return
     
     
+    def gridSearch(self,max_iters,algo_name,perf_dict_name,perf_Func=rmse,**kwargs):
+        
+        
+        #calculate split per parameter
+        param_cuts = (math.floor(math.log(max_iters)/math.log(len(kwargs)))-2)
+        
+        
+        #put an error if param_cuts is equal to 0 that says something about
+        #adding more max interations
+                                
+        #cut data into grids
+        
+        all_params_list = []
+        
+        for i in kwargs:
+            
+            temp_list = []
+            
+            temp_lower = kwargs[i][0]
+            temp_upper = kwargs[i][1]
+            
+            temp_range = temp_upper - temp_lower
+            
+            temp_step = temp_range/param_cuts
+            
+            temp_list.append(temp_lower)
+            
+            temp_value = temp_lower
+            
+            for j in range(0,param_cuts):
+                
+                temp_value = temp_value + temp_step
+                
+                #if integer parameter, round down
+                if kwargs[i][2] == 'int':
+                    temp_value = math.floor(temp_value)
+                    
+                temp_list.append(temp_value)
+                
+            temp_list.append(temp_upper)
+            
+            print(temp_list)
+            
+            all_params_list.append(temp_list)
+            
+        
+        #Put tuning parameters into a temporary kwargs and pass through the aglorithm
+        #none of this is working yet, needs a lot of debugging
+        all_combos = list(itertools.product(*all_params_list))
+        
+        print(len(all_combos))
+        print(all_combos)
+        
+        for i in all_combos:
+            temp_kwargs = kwargs.copy()
+            for j,k in zip(range(0,len(i)),kwargs.keys()):
+            
+                temp_kwargs[k] = i[j]
+            
+            #print(temp_kwargs)
+            
+            #train and score model
+            train_pred, test_pred = self.trainAndScore(algo_name,**temp_kwargs)
+            
+            #calculate model performance
+            train_perf = self.modelPerf(perf_Func,self.y_train,train_pred)
+            test_perf = self.modelPerf(perf_Func,self.y_test, test_pred)
+            
+            #add performance to dictionary that has tuning parameters
+            temp_kwargs['train_perf'] = train_perf
+            temp_kwargs['test_perf'] = test_perf
+            
+            #put results and parameters into dataframe
+            temp_df = pd.DataFrame.from_records(temp_kwargs,index=[0])
+            
+            #append to temp_df_all if it exists, if it doesn't, create it    
+            try:
+                temp_df_all = temp_df_all.append(temp_df, ignore_index=True)
+            except:
+                temp_df_all = pd.DataFrame(temp_df)
+                
+    
+            #add performance to of tuning to df attribute or append to it
+            #   depending on if an attribute dataframe exists
+            self.appendPerfDF(temp_df_all,perf_dict_name)   
+        
+        return
+    
+    
 #test the code
 test_df = pd.read_csv('sample_data/test_data.csv')   
 
 test_tune = paramTune(test_df, 'recordCount', 0.3)
 
-test_tune.random_search(2,XGBRegressor,'first_test',n_estimators=[10,20,'int'],learning_rate=[0.25,0.1,'cont'])
+#test_tune.random_search(2,XGBRegressor,'first_test',n_estimators=[10,20,'int'],
+ #                       learning_rate=[0.25,0.1,'cont'],
+ #                       max_depth=[2,5,'int'])
 #test_tune.random_search(5,XGBRegressor,'first_test',n_estimators=[10,20,'int'],learning_rate=[0.25,0.1,'cont'])
 
-print(test_tune.first_test)
+
+test_tune.gridSearch(150,XGBRegressor,'temp_dict_name',n_estimators=[10,20,'int'],
+                        learning_rate=[0.1,0.25,'cont'],
+                        max_depth=[2,5,'int'])
+
+#print(test_tune.temp_dict_name)
+
+temp_dict = test_tune.temp_dict_name
 
 
+print('done')
 
 
 
