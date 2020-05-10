@@ -138,9 +138,9 @@ class paramTune():
         
         
         #calculate split per parameter
-        param_cuts = (math.floor(math.log(max_iters)/math.log(len(kwargs)))-2)
-        
-        
+        #this function is not correct
+        param_cuts = (math.floor(math.log(max_iters)/math.log(len(kwargs)))-1)
+         
         #put an error if param_cuts is equal to 0 that says something about
         #adding more max interations
                                 
@@ -163,20 +163,23 @@ class paramTune():
             
             temp_value = temp_lower
             
+            #create a list of values that will be tested for each parameter
             for j in range(0,param_cuts):
                 
                 temp_value = temp_value + temp_step
                 
+                
                 #if integer parameter, round down
                 if kwargs[i][2] == 'int':
-                    temp_value = math.floor(temp_value)
+                                    
+                    temp_value_rounded = round(temp_value)
                     
-                temp_list.append(temp_value)
+                    temp_list.append(temp_value_rounded)
+                else:
+                    #round to 10 decimal places, maybe not appropriate for all algorithms
+                    temp_value_rounded = round(temp_value,10)
+                    temp_list.append(temp_value_rounded)
                 
-            temp_list.append(temp_upper)
-            
-            print(temp_list)
-            
             all_params_list.append(temp_list)
             
         
@@ -184,16 +187,13 @@ class paramTune():
         #none of this is working yet, needs a lot of debugging
         all_combos = list(itertools.product(*all_params_list))
         
-        print(len(all_combos))
-        print(all_combos)
+        #if len(all_combos) < 100
         
         for i in all_combos:
             temp_kwargs = kwargs.copy()
             for j,k in zip(range(0,len(i)),kwargs.keys()):
             
                 temp_kwargs[k] = i[j]
-            
-            #print(temp_kwargs)
             
             #train and score model
             train_pred, test_pred = self.trainAndScore(algo_name,**temp_kwargs)
@@ -209,6 +209,7 @@ class paramTune():
             #put results and parameters into dataframe
             temp_df = pd.DataFrame.from_records(temp_kwargs,index=[0])
             
+            
             #append to temp_df_all if it exists, if it doesn't, create it    
             try:
                 temp_df_all = temp_df_all.append(temp_df, ignore_index=True)
@@ -216,9 +217,12 @@ class paramTune():
                 temp_df_all = pd.DataFrame(temp_df)
                 
     
-            #add performance to of tuning to df attribute or append to it
-            #   depending on if an attribute dataframe exists
-            self.appendPerfDF(temp_df_all,perf_dict_name)   
+        #add performance to of tuning to df attribute or append to it
+        #   depending on if an attribute dataframe exists
+        self.appendPerfDF(temp_df_all,perf_dict_name)   
+            
+            #print out how many soultions were explored
+        print('%s Solutions Explored' % (len(all_combos)))
         
         return
     
@@ -234,14 +238,12 @@ test_tune = paramTune(test_df, 'recordCount', 0.3)
 #test_tune.random_search(5,XGBRegressor,'first_test',n_estimators=[10,20,'int'],learning_rate=[0.25,0.1,'cont'])
 
 
-test_tune.gridSearch(150,XGBRegressor,'temp_dict_name',n_estimators=[10,20,'int'],
+test_tune.gridSearch(250,XGBRegressor,'temp_dict_name',n_estimators=[10,20,'int'],
                         learning_rate=[0.1,0.25,'cont'],
-                        max_depth=[2,5,'int'])
+                        max_depth=[2,10,'int'])
 
-#print(test_tune.temp_dict_name)
 
-temp_dict = test_tune.temp_dict_name
-
+print(len(test_tune.temp_dict_name))
 
 print('done')
 
