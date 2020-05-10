@@ -137,9 +137,9 @@ class paramTune():
     def gridSearch(self,max_iters,algo_name,perf_dict_name,perf_Func=rmse,**kwargs):
         
         
-        #calculate split per parameter
-        #this function is not correct
-        param_cuts = (math.floor(math.log(max_iters)/math.log(len(kwargs)))-1)
+        #calculate number of splits per parameter given a maximum number of iterations explored       
+        param_cuts = (math.floor(math.exp((math.log(max_iters)/len(kwargs))))-1)
+        
          
         #put an error if param_cuts is equal to 0 that says something about
         #adding more max interations
@@ -179,12 +179,12 @@ class paramTune():
                     #round to 10 decimal places, maybe not appropriate for all algorithms
                     temp_value_rounded = round(temp_value,10)
                     temp_list.append(temp_value_rounded)
-                
+            
+            
             all_params_list.append(temp_list)
             
         
         #Put tuning parameters into a temporary kwargs and pass through the aglorithm
-        #none of this is working yet, needs a lot of debugging
         all_combos = list(itertools.product(*all_params_list))
         
         #if len(all_combos) < 100
