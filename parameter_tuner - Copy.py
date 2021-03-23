@@ -8,6 +8,7 @@ from math import sqrt
 import math
 import itertools
 import warnings
+from datetime import date
 
 
 class paramTune():
@@ -20,17 +21,31 @@ class paramTune():
     #--- depth_range    => List of two integers that designate the bounds of the tree depth in the XGBoost algorithm
     #--- test_split     => Size of test data set as either pct or record count
     
-    def __init__(self,df,target_name,test_split):
+    def __init__(self,df,target_name,test_split=0.3,oot_split=date(1900,1,1),date_var='date'):
         
         self.df = df
         self.target_name = target_name
         self.test_split = test_split
         
-        #create test and train data based on user inputed test_split
-        self.y = df[target_name] 
-        self.X = df.drop([target_name],axis=1)
         
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X,self.y,test_size=test_split,random_state=29)
+        if oot_split == date(1900,1,1):
+            
+            #create test and train data based on user inputed test_split
+            self.y = df[target_name] 
+            self.X = df.drop([target_name],axis=1)
+        
+            self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X,self.y,test_size=test_split,random_state=29)
+        
+        else:
+            
+            train = df[df[date_var]<oot_split]
+            test = df[df[date_var]>=oot_split]
+            self.X_train = train.drop([target_name],axis=1)
+            self.y_train = train[target_name]
+            
+            self.X_test = test.drop([target_name],axis=1)
+            self.y_test = test[target_name]
+        
         
       
     #method to train and score a model based on algorithm name and algorithm parameters
